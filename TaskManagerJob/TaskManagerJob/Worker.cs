@@ -1,11 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaskManagerJob.Dtos;
 using TaskManagerJob.Entities;
+using TaskManagerJob.Logger;
 using TaskManagerJob.Repositories.Interfaces;
 using TaskManagerJob.Utilities;
 
@@ -13,29 +9,40 @@ namespace TaskManagerJob
 {
     public class Worker
     {
-        //readonly ILogger<BackgroundWorkerService> _logger;
+        private readonly ILoggerManager _logger;
         private readonly IRepositoryManager _repository;
-        private readonly IServiceProvider _serviceProvider;
         private readonly IConfiguration _configuration;
         private readonly IHttpClientWrapper _httpClient;
 
-        public Worker(IServiceProvider serviceProvider, IConfiguration configuration, IHttpClientWrapper httpClient, IRepositoryManager repository)
+        public Worker(IConfiguration configuration, IHttpClientWrapper httpClient, IRepositoryManager repository, ILoggerManager logger)
         {
-            //_logger = logger;
             _repository = repository;
-            _serviceProvider = serviceProvider;
             _configuration = configuration;
             _httpClient = httpClient;
+            _logger = logger;
         }
 
         public async Task ExecuteProcessAsync()
         {
+            _logger.LogInformation(" ");
+            _logger.LogInformation("---------STARTING EXECUTION PROCESS---------");
+            _logger.LogInformation("---------STARTING EXECUTION PROCESS---------");
+
             var getAnyUnCompletedTaskToDueInTwoDays = await _repository.TaskRepository.GetAnyUnCompletedTaskToDueInTwoDays(false);
+            
+            _logger.LogInformation("Getting uncompeted tasks that will be due in range of 48 hours");
+            _logger.LogInformation("Total due tasks found is : ");
+            _logger.LogInformation(getAnyUnCompletedTaskToDueInTwoDays == null ? "0" : getAnyUnCompletedTaskToDueInTwoDays.Count().ToString());
+
+
             if (getAnyUnCompletedTaskToDueInTwoDays != null)
             {
                 foreach (var task in getAnyUnCompletedTaskToDueInTwoDays)
                 {
-                    var checkIfUserAlreadyRecievedNotification = await _repository.NotificationRepository.GetByNotificationIdAndUserId(task.TaskId, task.UserId, true);
+                    var checkIfUserAlreadyRecievedNotification = await _repository.NotificationRepository.GetByNotificationIdAndUserId(task.Id, task.UserId, true);
+                    _logger.LogInformation("-----------------------------------------------");
+                    _logger.LogInformation("Checking if users already recieved notification");
+                    _logger.LogInformation("USER WITH THE ID: " + task.Id);
                     if (checkIfUserAlreadyRecievedNotification == null)
                     {
                         //  NOW WE CAN SEND MAIL AND UPDATE DB
@@ -63,8 +70,14 @@ namespace TaskManagerJob
                                 Url = mailerUrl,
                                 Data = sendRequest
                             };
+                            _logger.LogInformation("----------------------------------");
+                            _logger.LogInformation("----------------------------------");
+                            _logger.LogInformation("Request sent to the mailing server");
 
                             var sendEmailResponse = await _httpClient.SendPostEmailRequest<string, EmailSenderRequestDto>(req);
+                            _logger.LogInformation("--------------------------------");
+                            _logger.LogInformation("--------------------------------");
+                            _logger.LogInformation("Response from the mailing server");
 
                             //  IT WILL ONLY UPDATE THIS RECORD IS THE EMAIL WAS SENT SUCCESSFULLY ELSE THE TASK WILL BE RETURNED BACK FOR THE NEXT BATCH PROCESSING
                             if (sendEmailResponse == "1")
@@ -72,7 +85,7 @@ namespace TaskManagerJob
                                 var createNotificationRequest = new Notification
                                 {
                                     NotificationId = Guid.NewGuid().ToString(),
-                                    TaskId = task.TaskId.ToString(),
+                                    TaskId = task.Id.ToString(),
                                     RecievedUserId = task.UserId,
                                     Type = NotificationType.Due_date.ToString(),
                                     Message = sendRequest.message,
@@ -80,12 +93,16 @@ namespace TaskManagerJob
                                     Time = DateTime.UtcNow,
                                 };
                                 _repository.NotificationRepository.CreateNotification(createNotificationRequest);
-                                await _repository.SaveAsync();
                             }
                         }
                     }
                 }
+                await _repository.SaveAsync();
             }
+
+            _logger.LogInformation("---------ENDING EXECUTION PROCESS---------");
+            _logger.LogInformation("---------ENDING EXECUTION PROCESS---------");
+            _logger.LogInformation(" ");
 
         }
     }

@@ -1,12 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaskManagerJob.Data;
+using TaskManagerJob.Logger;
 using TaskManagerJob.Repositories.Implementations;
 using TaskManagerJob.Repositories.Interfaces;
 using TaskManagerJob.Utilities;
@@ -21,6 +17,7 @@ namespace TaskManagerJob.Extensions
             services.AddScoped<IHttpClientWrapper, HttpClientWrapper>();
             services.AddHttpContextAccessor();
             services.AddScoped<IRepositoryManager, RepositoryManager>();
+            services.AddScoped<ILoggerManager, LoggerManager>();
             services.AddTransient(typeof(TimeSpan), _ => TimeSpan.FromSeconds(1D));
             var serviceProvider = services.BuildServiceProvider();
             var timespan = (TimeSpan)serviceProvider.GetRequiredService(typeof(TimeSpan));

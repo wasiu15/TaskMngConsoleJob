@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using NLog;
-using TaskManagerJob;
 using TaskManagerJob.Extensions;
 
 namespace TaskManagerJob
@@ -12,24 +11,32 @@ namespace TaskManagerJob
         public async static Task Main(string[] args)
         {
 
-            Console.WriteLine("Statement of Account, Schedule and Reccurring Payment entry point of this application");
+            Console.WriteLine("=========================================");
+            Console.WriteLine(" TASK MANAGEMENT CONSOLE JOB ENTRY POINT");
+            Console.WriteLine(" TASK MANAGEMENT CONSOLE JOB ENTRY POINT");
+            Console.WriteLine("=========================================");
 
             var builder = WebApplication.CreateBuilder(args);
 
-            //LogManager.LoadConfiguration(string.Concat(Directory.GetCurrentDirectory(),
-            //"\\nlog.config"));
+            LogManager.LoadConfiguration(string.Concat(Directory.GetCurrentDirectory(),
+            "\\nlog.config"));
 
 
             var configuration = builder.Configuration;
-
-            //AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+            
+            //  REGISTING OUR SERVICES
             builder.Services.RegisterDbContext(configuration);
             builder.Services.ConfigureServices();
             builder.Services.ConfigureHttpClient();
             var app = builder.Build();
 
-            // Executable Process of the application
+            // EXECUTABLE PROCESS OF THE APPLICATION
             await app.ExecuteProcess();
+
+            Console.WriteLine("===========================================");
+            Console.WriteLine(" TASK MANAGEMENT CONSOLE JOB EXITING POINT");
+            Console.WriteLine(" TASK MANAGEMENT CONSOLE JOB EXITING POINT");
+            Console.WriteLine("===========================================");
 
         }
     }

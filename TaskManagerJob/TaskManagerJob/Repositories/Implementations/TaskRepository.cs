@@ -14,13 +14,11 @@ namespace TaskManagerJob.Repositories.Implementations
 
         public async Task<IEnumerable<UserTask>> GetAnyUnCompletedTaskToDueInTwoDays(bool trackChanges)
         {
-            //var result =  await FindByCondition(x => x.Status != Status.completed && Util.IsDateDue(x.DueDate), trackChanges).ToListAsync();
-            //return result;
-            var result = await FindAll(false).ToListAsync();
-            return result;
+            var fetchTasksFromDb = await FindAll(false).ToListAsync();
 
+            var dueTasks = fetchTasksFromDb.Where(x => x.Status != Status.completed && Util.IsDateDue(x.DueDate)).ToList();
+            return dueTasks;
 
         }
-
     }
 }
